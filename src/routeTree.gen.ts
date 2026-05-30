@@ -9,38 +9,173 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WarehouseRouteImport } from './routes/warehouse'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RoutesRouteImport } from './routes/routes'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InvoiceInvoiceIdRouteImport } from './routes/invoice.$invoiceId'
+import { Route as DayDayRouteImport } from './routes/day.$day'
+import { Route as CustomerIdRouteImport } from './routes/customer.$id'
+import { Route as CustomerIdNewInvoiceRouteImport } from './routes/customer.$id.new-invoice'
 
+const WarehouseRoute = WarehouseRouteImport.update({
+  id: '/warehouse',
+  path: '/warehouse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoutesRoute = RoutesRouteImport.update({
+  id: '/routes',
+  path: '/routes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvoiceInvoiceIdRoute = InvoiceInvoiceIdRouteImport.update({
+  id: '/invoice/$invoiceId',
+  path: '/invoice/$invoiceId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DayDayRoute = DayDayRouteImport.update({
+  id: '/day/$day',
+  path: '/day/$day',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomerIdRoute = CustomerIdRouteImport.update({
+  id: '/customer/$id',
+  path: '/customer/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomerIdNewInvoiceRoute = CustomerIdNewInvoiceRouteImport.update({
+  id: '/new-invoice',
+  path: '/new-invoice',
+  getParentRoute: () => CustomerIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/routes': typeof RoutesRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/warehouse': typeof WarehouseRoute
+  '/customer/$id': typeof CustomerIdRouteWithChildren
+  '/day/$day': typeof DayDayRoute
+  '/invoice/$invoiceId': typeof InvoiceInvoiceIdRoute
+  '/customer/$id/new-invoice': typeof CustomerIdNewInvoiceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/routes': typeof RoutesRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/warehouse': typeof WarehouseRoute
+  '/customer/$id': typeof CustomerIdRouteWithChildren
+  '/day/$day': typeof DayDayRoute
+  '/invoice/$invoiceId': typeof InvoiceInvoiceIdRoute
+  '/customer/$id/new-invoice': typeof CustomerIdNewInvoiceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/routes': typeof RoutesRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/warehouse': typeof WarehouseRoute
+  '/customer/$id': typeof CustomerIdRouteWithChildren
+  '/day/$day': typeof DayDayRoute
+  '/invoice/$invoiceId': typeof InvoiceInvoiceIdRoute
+  '/customer/$id/new-invoice': typeof CustomerIdNewInvoiceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/routes'
+    | '/sitemap.xml'
+    | '/warehouse'
+    | '/customer/$id'
+    | '/day/$day'
+    | '/invoice/$invoiceId'
+    | '/customer/$id/new-invoice'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/routes'
+    | '/sitemap.xml'
+    | '/warehouse'
+    | '/customer/$id'
+    | '/day/$day'
+    | '/invoice/$invoiceId'
+    | '/customer/$id/new-invoice'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/routes'
+    | '/sitemap.xml'
+    | '/warehouse'
+    | '/customer/$id'
+    | '/day/$day'
+    | '/invoice/$invoiceId'
+    | '/customer/$id/new-invoice'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
+  RoutesRoute: typeof RoutesRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  WarehouseRoute: typeof WarehouseRoute
+  CustomerIdRoute: typeof CustomerIdRouteWithChildren
+  DayDayRoute: typeof DayDayRoute
+  InvoiceInvoiceIdRoute: typeof InvoiceInvoiceIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/warehouse': {
+      id: '/warehouse'
+      path: '/warehouse'
+      fullPath: '/warehouse'
+      preLoaderRoute: typeof WarehouseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/routes': {
+      id: '/routes'
+      path: '/routes'
+      fullPath: '/routes'
+      preLoaderRoute: typeof RoutesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +183,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invoice/$invoiceId': {
+      id: '/invoice/$invoiceId'
+      path: '/invoice/$invoiceId'
+      fullPath: '/invoice/$invoiceId'
+      preLoaderRoute: typeof InvoiceInvoiceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/day/$day': {
+      id: '/day/$day'
+      path: '/day/$day'
+      fullPath: '/day/$day'
+      preLoaderRoute: typeof DayDayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customer/$id': {
+      id: '/customer/$id'
+      path: '/customer/$id'
+      fullPath: '/customer/$id'
+      preLoaderRoute: typeof CustomerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customer/$id/new-invoice': {
+      id: '/customer/$id/new-invoice'
+      path: '/new-invoice'
+      fullPath: '/customer/$id/new-invoice'
+      preLoaderRoute: typeof CustomerIdNewInvoiceRouteImport
+      parentRoute: typeof CustomerIdRoute
+    }
   }
 }
 
+interface CustomerIdRouteChildren {
+  CustomerIdNewInvoiceRoute: typeof CustomerIdNewInvoiceRoute
+}
+
+const CustomerIdRouteChildren: CustomerIdRouteChildren = {
+  CustomerIdNewInvoiceRoute: CustomerIdNewInvoiceRoute,
+}
+
+const CustomerIdRouteWithChildren = CustomerIdRoute._addFileChildren(
+  CustomerIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
+  RoutesRoute: RoutesRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  WarehouseRoute: WarehouseRoute,
+  CustomerIdRoute: CustomerIdRouteWithChildren,
+  DayDayRoute: DayDayRoute,
+  InvoiceInvoiceIdRoute: InvoiceInvoiceIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
