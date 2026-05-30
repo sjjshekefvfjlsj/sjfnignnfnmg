@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CalendarDays, Plus, MapPin, ChevronLeft, UserPlus, Star } from "lucide-react";
+import { CalendarDays, Plus, ChevronLeft, UserPlus, Star } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
