@@ -14,6 +14,7 @@ import { Route as RoutesRouteImport } from './routes/routes'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DayDayRouteImport } from './routes/day.$day'
+import { Route as CustomerIdRouteImport } from './routes/customer.$id'
 
 const WarehouseRoute = WarehouseRouteImport.update({
   id: '/warehouse',
@@ -40,12 +41,18 @@ const DayDayRoute = DayDayRouteImport.update({
   path: '/day/$day',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CustomerIdRoute = CustomerIdRouteImport.update({
+  id: '/customer/$id',
+  path: '/customer/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/routes': typeof RoutesRoute
   '/warehouse': typeof WarehouseRoute
+  '/customer/$id': typeof CustomerIdRoute
   '/day/$day': typeof DayDayRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/routes': typeof RoutesRoute
   '/warehouse': typeof WarehouseRoute
+  '/customer/$id': typeof CustomerIdRoute
   '/day/$day': typeof DayDayRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,34 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/routes': typeof RoutesRoute
   '/warehouse': typeof WarehouseRoute
+  '/customer/$id': typeof CustomerIdRoute
   '/day/$day': typeof DayDayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/routes' | '/warehouse' | '/day/$day'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/routes'
+    | '/warehouse'
+    | '/customer/$id'
+    | '/day/$day'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/routes' | '/warehouse' | '/day/$day'
-  id: '__root__' | '/' | '/dashboard' | '/routes' | '/warehouse' | '/day/$day'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/routes'
+    | '/warehouse'
+    | '/customer/$id'
+    | '/day/$day'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/routes'
+    | '/warehouse'
+    | '/customer/$id'
+    | '/day/$day'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +104,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   RoutesRoute: typeof RoutesRoute
   WarehouseRoute: typeof WarehouseRoute
+  CustomerIdRoute: typeof CustomerIdRoute
   DayDayRoute: typeof DayDayRoute
 }
 
@@ -116,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DayDayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/customer/$id': {
+      id: '/customer/$id'
+      path: '/customer/$id'
+      fullPath: '/customer/$id'
+      preLoaderRoute: typeof CustomerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -124,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   RoutesRoute: RoutesRoute,
   WarehouseRoute: WarehouseRoute,
+  CustomerIdRoute: CustomerIdRoute,
   DayDayRoute: DayDayRoute,
 }
 export const routeTree = rootRouteImport
