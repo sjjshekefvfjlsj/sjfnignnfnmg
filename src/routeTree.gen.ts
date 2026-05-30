@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WarehouseRouteImport } from './routes/warehouse'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RoutesRouteImport } from './routes/routes'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
@@ -21,6 +22,11 @@ import { Route as CustomerIdNewInvoiceRouteImport } from './routes/customer.$id.
 const WarehouseRoute = WarehouseRouteImport.update({
   id: '/warehouse',
   path: '/warehouse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoutesRoute = RoutesRouteImport.update({
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/routes': typeof RoutesRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/warehouse': typeof WarehouseRoute
   '/customer/$id': typeof CustomerIdRouteWithChildren
   '/day/$day': typeof DayDayRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/routes': typeof RoutesRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/warehouse': typeof WarehouseRoute
   '/customer/$id': typeof CustomerIdRouteWithChildren
   '/day/$day': typeof DayDayRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/routes': typeof RoutesRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/warehouse': typeof WarehouseRoute
   '/customer/$id': typeof CustomerIdRouteWithChildren
   '/day/$day': typeof DayDayRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/routes'
+    | '/sitemap.xml'
     | '/warehouse'
     | '/customer/$id'
     | '/day/$day'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/routes'
+    | '/sitemap.xml'
     | '/warehouse'
     | '/customer/$id'
     | '/day/$day'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/routes'
+    | '/sitemap.xml'
     | '/warehouse'
     | '/customer/$id'
     | '/day/$day'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   RoutesRoute: typeof RoutesRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WarehouseRoute: typeof WarehouseRoute
   CustomerIdRoute: typeof CustomerIdRouteWithChildren
   DayDayRoute: typeof DayDayRoute
@@ -140,6 +153,13 @@ declare module '@tanstack/react-router' {
       path: '/warehouse'
       fullPath: '/warehouse'
       preLoaderRoute: typeof WarehouseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/routes': {
@@ -210,6 +230,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   RoutesRoute: RoutesRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   WarehouseRoute: WarehouseRoute,
   CustomerIdRoute: CustomerIdRouteWithChildren,
   DayDayRoute: DayDayRoute,
