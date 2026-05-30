@@ -13,6 +13,7 @@ import { Route as WarehouseRouteImport } from './routes/warehouse'
 import { Route as RoutesRouteImport } from './routes/routes'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DayDayRouteImport } from './routes/day.$day'
 
 const WarehouseRoute = WarehouseRouteImport.update({
   id: '/warehouse',
@@ -34,18 +35,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DayDayRoute = DayDayRouteImport.update({
+  id: '/day/$day',
+  path: '/day/$day',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/routes': typeof RoutesRoute
   '/warehouse': typeof WarehouseRoute
+  '/day/$day': typeof DayDayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/routes': typeof RoutesRoute
   '/warehouse': typeof WarehouseRoute
+  '/day/$day': typeof DayDayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/routes': typeof RoutesRoute
   '/warehouse': typeof WarehouseRoute
+  '/day/$day': typeof DayDayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/routes' | '/warehouse'
+  fullPaths: '/' | '/dashboard' | '/routes' | '/warehouse' | '/day/$day'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/routes' | '/warehouse'
-  id: '__root__' | '/' | '/dashboard' | '/routes' | '/warehouse'
+  to: '/' | '/dashboard' | '/routes' | '/warehouse' | '/day/$day'
+  id: '__root__' | '/' | '/dashboard' | '/routes' | '/warehouse' | '/day/$day'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +76,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   RoutesRoute: typeof RoutesRoute
   WarehouseRoute: typeof WarehouseRoute
+  DayDayRoute: typeof DayDayRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/day/$day': {
+      id: '/day/$day'
+      path: '/day/$day'
+      fullPath: '/day/$day'
+      preLoaderRoute: typeof DayDayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,7 +124,18 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   RoutesRoute: RoutesRoute,
   WarehouseRoute: WarehouseRoute,
+  DayDayRoute: DayDayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
