@@ -39,6 +39,17 @@ function WelcomePage() {
   const navigate = useNavigate();
   const { canInstall, isInstalled, promptInstall } = usePwaInstall();
 
+  // When opened as an installed app (standalone), skip the install screen.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const standalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      // @ts-expect-error iOS Safari
+      window.navigator.standalone === true;
+    if (standalone) navigate({ to: "/dashboard", replace: true });
+  }, [navigate]);
+
+
   const handleInstall = async () => {
     if (isInstalled) {
       toast.success("التطبيق مثبّت بالفعل على جهازك ✅");
