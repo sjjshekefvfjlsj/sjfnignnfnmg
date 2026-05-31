@@ -1,9 +1,12 @@
 import { createFileRoute, useParams, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ReceiptText, User, FilePlus2 } from "lucide-react";
+import { ReceiptText, User, FilePlus2, Download } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { fetchInvoice, formatMoney } from "@/lib/sales";
+import { useSettings } from "@/hooks/use-settings";
+import { downloadInvoicePdf } from "@/lib/invoice-pdf";
+
 
 export const Route = createFileRoute("/invoice/$invoiceId")({
   head: () => ({
