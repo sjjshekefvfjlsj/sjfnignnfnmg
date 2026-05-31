@@ -201,9 +201,102 @@ export async function createInvoice(customerId: string, lines: NewInvoiceLine[])
   const { error: itemsErr } = await supabase.from("invoice_items").insert(items);
   if (itemsErr) throw itemsErr;
 
+  // Deduct sold quantities from warehouse stock.
+  const { data: prods } = await supabase
+    .from("products")
+    .select("id, quantity")
+    .in(
+      "id",
+      lines.map((l) => l.product_id),
+    );
+  if (prods) {
+    await Promise.all(
+      lines.map((l) => {
+        const current = prods.find((p) => p.id === l.product_id);
+        if (!current) return Promise.resolve();
+        const next = Math.max(0, Number(current.quantity) - l.quantity);
+        return supabase.from("products").update({ quantity: next }).eq("id", l.product_id);
+      }),
+    );
+  }
+
   return invoice as Invoice;
 }
 
-export function formatMoney(n: number): string {
-  return new Intl.NumberFormat("ar-EG", { maximumFractionDigits: 2 }).format(n) + " ج.م";
+export function formatMoney(n: number, currency = "ج.م"): string {
+  return new Intl.NumberFormat("ar-EG", { maximumFractionDigits: 2 }).format(n) + " " + currency;
+}
+
+// ---------- App settings ----------
+export interface AppSettings {
+  id: string;
+  site_name: string;
+  app_password: string;
+  max_attempts: number;
+  lock_hours: number;
+  currency: string;
+  rep_name: string | null;
+  rep_phone: string | null;
+}
+
+export async function fetchSettings(): Promise<AppSettings> {
+  const { data, error } = await supabase
+    .from("app_settings")
+    .select("*")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (data) return data as AppSettings;
+
+  // Self-heal: create a default row if none exists.
+  const { data: created, error: insErr } = await supabase
+    .from("app_settings")
+    .insert({})
+    .select()
+    .single();
+  if (insErr) throw insErr;
+  return created as AppSettings;
+}
+
+export async function updateSettings(
+  id: string,
+  patch: Partial<Omit<AppSettings, "id">>,
+): Promise<void> {
+  const { error } = await supabase.from("app_settings").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+// ---------- Dashboard stats ----------
+export interface DashboardStats {
+  customerCount: number;
+  productCount: number;
+  totalStockQty: number;
+  totalStockValue: number;
+  invoiceCount: number;
+  totalSales: number;
+}
+
+export async function fetchDashboardStats(): Promise<DashboardStats> {
+  const [customers, products, invoices] = await Promise.all([
+    supabase.from("customers").select("id", { count: "exact", head: true }),
+    supabase.from("products").select("quantity, price"),
+    supabase.from("invoices").select("total_amount", { count: "exact" }),
+  ]);
+
+  const totalStockQty = (products.data ?? []).reduce((s, p) => s + Number(p.quantity), 0);
+  const totalStockValue = (products.data ?? []).reduce(
+    (s, p) => s + Number(p.quantity) * Number(p.price),
+    0,
+  );
+  const totalSales = (invoices.data ?? []).reduce((s, i) => s + Number(i.total_amount), 0);
+
+  return {
+    customerCount: customers.count ?? 0,
+    productCount: (products.data ?? []).length,
+    totalStockQty,
+    totalStockValue,
+    invoiceCount: invoices.count ?? 0,
+    totalSales,
+  };
 }

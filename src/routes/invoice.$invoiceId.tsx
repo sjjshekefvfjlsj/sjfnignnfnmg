@@ -1,9 +1,12 @@
 import { createFileRoute, useParams, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ReceiptText, User, FilePlus2 } from "lucide-react";
+import { ReceiptText, User, FilePlus2, Download } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { fetchInvoice, formatMoney } from "@/lib/sales";
+import { useSettings } from "@/hooks/use-settings";
+import { downloadInvoicePdf } from "@/lib/invoice-pdf";
+
 
 export const Route = createFileRoute("/invoice/$invoiceId")({
   head: () => ({
@@ -17,12 +20,23 @@ export const Route = createFileRoute("/invoice/$invoiceId")({
 
 function InvoiceDetail() {
   const { invoiceId } = useParams({ from: "/invoice/$invoiceId" });
+  const { settings } = useSettings();
   const { data, isLoading } = useQuery({
     queryKey: ["invoice", invoiceId],
     queryFn: () => fetchInvoice(invoiceId),
   });
 
   const customer = data?.customer;
+
+  const handlePdf = () => {
+    if (!data) return;
+    downloadInvoicePdf({
+      invoice: data.invoice,
+      items: data.items,
+      customer: data.customer,
+      settings,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -32,7 +46,19 @@ function InvoiceDetail() {
         backTo={customer ? "/customer/$id" : "/dashboard"}
         backParams={customer ? { id: customer.id } : undefined}
         icon={<ReceiptText className="h-6 w-6" />}
+        action={
+          data ? (
+            <button
+              onClick={handlePdf}
+              className="flex h-10 items-center gap-1 rounded-full bg-white/20 px-4 text-sm font-bold transition hover:bg-white/30 active:scale-90"
+            >
+              <Download className="h-4 w-4" />
+              PDF
+            </button>
+          ) : undefined
+        }
       />
+
 
       <main className="mx-auto max-w-3xl px-4 py-6">
         {isLoading ? (
