@@ -151,13 +151,33 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function RouteTransition() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={pathname}
+        initial={{ scaleX: 1 }}
+        animate={{ scaleX: 0 }}
+        exit={{ scaleX: 0 }}
+        transition={{ duration: 0.4, ease: [0.65, 0, 0.35, 1] }}
+        style={{ transformOrigin: "right" }}
+        className="pointer-events-none fixed inset-0 z-[120] gradient-brand"
+      />
+    </AnimatePresence>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <PasswordGate>
+        <RouteTransition />
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </PasswordGate>
       <Toaster position="top-center" richColors closeButton />
     </QueryClientProvider>
   );
