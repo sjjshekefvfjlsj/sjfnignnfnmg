@@ -169,10 +169,9 @@ function KeypadBtn({
   variant?: "default" | "brand";
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.9 }}
+    <button
       onClick={onClick}
-      className={`flex h-16 items-center justify-center rounded-2xl text-2xl font-black shadow-card transition ${
+      className={`flex h-16 items-center justify-center rounded-2xl text-2xl font-black shadow-card transition active:scale-90 ${
         variant === "brand"
           ? "gradient-brand text-brand-foreground shadow-warm"
           : "border border-border bg-card text-card-foreground hover:bg-brand-soft hover:text-primary"
@@ -180,6 +179,6 @@ function KeypadBtn({
       {...rest}
     >
       {children}
-    </motion.button>
+    </button>
   );
 }
