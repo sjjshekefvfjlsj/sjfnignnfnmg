@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          app_password: string
+          created_at: string
+          currency: string
+          id: string
+          lock_hours: number
+          max_attempts: number
+          rep_name: string | null
+          rep_phone: string | null
+          site_name: string
+          updated_at: string
+        }
+        Insert: {
+          app_password?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          lock_hours?: number
+          max_attempts?: number
+          rep_name?: string | null
+          rep_phone?: string | null
+          site_name?: string
+          updated_at?: string
+        }
+        Update: {
+          app_password?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          lock_hours?: number
+          max_attempts?: number
+          rep_name?: string | null
+          rep_phone?: string | null
+          site_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
