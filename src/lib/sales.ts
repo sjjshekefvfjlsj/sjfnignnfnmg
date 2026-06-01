@@ -8,12 +8,15 @@ export interface Product {
   created_at: string;
 }
 
+export type CustomerCategory = "route" | "vip";
+
 export interface Customer {
   id: string;
   name: string;
   location: string | null;
   phone: string | null;
   day_of_week: number;
+  category: string;
   created_at: string;
 }
 
@@ -22,6 +25,10 @@ export interface Invoice {
   customer_id: string;
   total_quantity: number;
   total_amount: number;
+  paid_cash: number;
+  paid_instapay: number;
+  paid_credit: number;
+  work_day_id: string | null;
   created_at: string;
 }
 
@@ -33,6 +40,29 @@ export interface InvoiceItem {
   price: number;
   quantity: number;
   line_total: number;
+  created_at: string;
+}
+
+export interface WorkDay {
+  id: string;
+  started_at: string;
+  ended_at: string | null;
+  status: string;
+  total_sales: number;
+  total_cash: number;
+  total_instapay: number;
+  total_credit: number;
+  total_quantity: number;
+  invoice_count: number;
+  duration_seconds: number;
+  created_at: string;
+}
+
+export interface CreditPayment {
+  id: string;
+  customer_id: string;
+  amount: number;
+  work_day_id: string | null;
   created_at: string;
 }
 
@@ -89,7 +119,18 @@ export async function fetchCustomersByDay(day: number): Promise<Customer[]> {
   const { data, error } = await supabase
     .from("customers")
     .select("*")
+    .eq("category", "route")
     .eq("day_of_week", day)
+    .order("name", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchVipCustomers(): Promise<Customer[]> {
+  const { data, error } = await supabase
+    .from("customers")
+    .select("*")
+    .eq("category", "vip")
     .order("name", { ascending: true });
   if (error) throw error;
   return data ?? [];
@@ -115,8 +156,15 @@ export async function addCustomer(input: {
   location: string;
   phone: string;
   day_of_week: number;
+  category?: CustomerCategory;
 }) {
-  const { error } = await supabase.from("customers").insert(input);
+  const { error } = await supabase.from("customers").insert({
+    name: input.name,
+    location: input.location || null,
+    phone: input.phone || null,
+    day_of_week: input.day_of_week,
+    category: input.category ?? "route",
+  });
   if (error) throw error;
 }
 
@@ -126,7 +174,10 @@ export async function deleteCustomer(id: string) {
 }
 
 export async function customerCountsByDay(): Promise<Record<number, number>> {
-  const { data, error } = await supabase.from("customers").select("day_of_week");
+  const { data, error } = await supabase
+    .from("customers")
+    .select("day_of_week")
+    .eq("category", "route");
   if (error) throw error;
   const counts: Record<number, number> = {};
   (data ?? []).forEach((c) => {
@@ -175,9 +226,36 @@ export interface NewInvoiceLine {
   quantity: number;
 }
 
-export async function createInvoice(customerId: string, lines: NewInvoiceLine[]) {
+export interface InvoicePayments {
+  paid_cash: number;
+  paid_instapay: number;
+  paid_credit: number;
+}
+
+async function adjustStock(deltas: { product_id: string; delta: number }[]) {
+  const ids = deltas.map((d) => d.product_id).filter(Boolean);
+  if (ids.length === 0) return;
+  const { data: prods } = await supabase.from("products").select("id, quantity").in("id", ids);
+  if (!prods) return;
+  await Promise.all(
+    deltas.map((d) => {
+      const current = prods.find((p) => p.id === d.product_id);
+      if (!current) return Promise.resolve();
+      const next = Math.max(0, Number(current.quantity) + d.delta);
+      return supabase.from("products").update({ quantity: next }).eq("id", d.product_id);
+    }),
+  );
+}
+
+export async function createInvoice(
+  customerId: string,
+  lines: NewInvoiceLine[],
+  payments: InvoicePayments,
+) {
   const totalQuantity = lines.reduce((s, l) => s + l.quantity, 0);
   const totalAmount = lines.reduce((s, l) => s + l.quantity * l.price, 0);
+
+  const active = await fetchActiveWorkDay();
 
   const { data: invoice, error } = await supabase
     .from("invoices")
@@ -185,6 +263,10 @@ export async function createInvoice(customerId: string, lines: NewInvoiceLine[])
       customer_id: customerId,
       total_quantity: totalQuantity,
       total_amount: totalAmount,
+      paid_cash: payments.paid_cash,
+      paid_instapay: payments.paid_instapay,
+      paid_credit: payments.paid_credit,
+      work_day_id: active?.id ?? null,
     })
     .select()
     .single();
@@ -202,29 +284,240 @@ export async function createInvoice(customerId: string, lines: NewInvoiceLine[])
   if (itemsErr) throw itemsErr;
 
   // Deduct sold quantities from warehouse stock.
-  const { data: prods } = await supabase
-    .from("products")
-    .select("id, quantity")
-    .in(
-      "id",
-      lines.map((l) => l.product_id),
-    );
-  if (prods) {
-    await Promise.all(
-      lines.map((l) => {
-        const current = prods.find((p) => p.id === l.product_id);
-        if (!current) return Promise.resolve();
-        const next = Math.max(0, Number(current.quantity) - l.quantity);
-        return supabase.from("products").update({ quantity: next }).eq("id", l.product_id);
-      }),
-    );
-  }
+  await adjustStock(lines.map((l) => ({ product_id: l.product_id, delta: -l.quantity })));
 
   return invoice as Invoice;
 }
 
+export async function updateInvoice(
+  invoiceId: string,
+  lines: NewInvoiceLine[],
+  payments: InvoicePayments,
+) {
+  // Restore old stock first.
+  const { data: oldItems } = await supabase
+    .from("invoice_items")
+    .select("product_id, quantity")
+    .eq("invoice_id", invoiceId);
+  if (oldItems) {
+    await adjustStock(
+      oldItems
+        .filter((i) => i.product_id)
+        .map((i) => ({ product_id: i.product_id as string, delta: Number(i.quantity) })),
+    );
+  }
+
+  // Replace items.
+  await supabase.from("invoice_items").delete().eq("invoice_id", invoiceId);
+
+  const totalQuantity = lines.reduce((s, l) => s + l.quantity, 0);
+  const totalAmount = lines.reduce((s, l) => s + l.quantity * l.price, 0);
+
+  const items = lines.map((l) => ({
+    invoice_id: invoiceId,
+    product_id: l.product_id,
+    product_name: l.product_name,
+    price: l.price,
+    quantity: l.quantity,
+    line_total: l.quantity * l.price,
+  }));
+  const { error: itemsErr } = await supabase.from("invoice_items").insert(items);
+  if (itemsErr) throw itemsErr;
+
+  const { error } = await supabase
+    .from("invoices")
+    .update({
+      total_quantity: totalQuantity,
+      total_amount: totalAmount,
+      paid_cash: payments.paid_cash,
+      paid_instapay: payments.paid_instapay,
+      paid_credit: payments.paid_credit,
+    })
+    .eq("id", invoiceId);
+  if (error) throw error;
+
+  // Deduct new stock.
+  await adjustStock(lines.map((l) => ({ product_id: l.product_id, delta: -l.quantity })));
+}
+
 export function formatMoney(n: number, currency = "ج.م"): string {
   return new Intl.NumberFormat("ar-EG", { maximumFractionDigits: 2 }).format(n) + " " + currency;
+}
+
+// ---------- Work days (daily sessions) ----------
+export async function fetchActiveWorkDay(): Promise<WorkDay | null> {
+  const { data, error } = await supabase
+    .from("work_days")
+    .select("*")
+    .eq("status", "active")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function startWorkDay(): Promise<WorkDay> {
+  const existing = await fetchActiveWorkDay();
+  if (existing) return existing;
+  const { data, error } = await supabase
+    .from("work_days")
+    .insert({ status: "active" })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as WorkDay;
+}
+
+export async function endWorkDay(id: string): Promise<WorkDay> {
+  const { data: day, error: dErr } = await supabase
+    .from("work_days")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (dErr) throw dErr;
+
+  const { data: invs, error: iErr } = await supabase
+    .from("invoices")
+    .select("total_amount, total_quantity, paid_cash, paid_instapay, paid_credit")
+    .eq("work_day_id", id);
+  if (iErr) throw iErr;
+
+  const list = invs ?? [];
+  const total_sales = list.reduce((s, i) => s + Number(i.total_amount), 0);
+  const total_quantity = list.reduce((s, i) => s + Number(i.total_quantity), 0);
+  const total_cash = list.reduce((s, i) => s + Number(i.paid_cash), 0);
+  const total_instapay = list.reduce((s, i) => s + Number(i.paid_instapay), 0);
+  const total_credit = list.reduce((s, i) => s + Number(i.paid_credit), 0);
+  const endedAt = new Date();
+  const duration_seconds = Math.max(
+    0,
+    Math.floor((endedAt.getTime() - new Date(day.started_at).getTime()) / 1000),
+  );
+
+  const { data: updated, error } = await supabase
+    .from("work_days")
+    .update({
+      status: "closed",
+      ended_at: endedAt.toISOString(),
+      total_sales,
+      total_quantity,
+      total_cash,
+      total_instapay,
+      total_credit,
+      invoice_count: list.length,
+      duration_seconds,
+    })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return updated as WorkDay;
+}
+
+export async function fetchWorkDays(): Promise<WorkDay[]> {
+  const { data, error } = await supabase
+    .from("work_days")
+    .select("*")
+    .order("started_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Live totals for the currently active day (computed on the fly). */
+export interface WorkDayLive {
+  total_sales: number;
+  total_cash: number;
+  total_instapay: number;
+  total_credit: number;
+  total_quantity: number;
+  invoice_count: number;
+}
+
+export async function fetchWorkDayReport(id: string): Promise<{
+  day: WorkDay;
+  invoices: (Invoice & { customer_name: string })[];
+  live: WorkDayLive;
+} | null> {
+  const { data: day, error } = await supabase
+    .from("work_days")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!day) return null;
+
+  const { data: invs, error: iErr } = await supabase
+    .from("invoices")
+    .select("*")
+    .eq("work_day_id", id)
+    .order("created_at", { ascending: false });
+  if (iErr) throw iErr;
+
+  const customers = await fetchAllCustomers();
+  const nameById = new Map(customers.map((c) => [c.id, c.name]));
+  const invoices = (invs ?? []).map((i) => ({
+    ...i,
+    customer_name: nameById.get(i.customer_id) ?? "—",
+  })) as (Invoice & { customer_name: string })[];
+
+  const live: WorkDayLive = {
+    total_sales: invoices.reduce((s, i) => s + Number(i.total_amount), 0),
+    total_cash: invoices.reduce((s, i) => s + Number(i.paid_cash), 0),
+    total_instapay: invoices.reduce((s, i) => s + Number(i.paid_instapay), 0),
+    total_credit: invoices.reduce((s, i) => s + Number(i.paid_credit), 0),
+    total_quantity: invoices.reduce((s, i) => s + Number(i.total_quantity), 0),
+    invoice_count: invoices.length,
+  };
+
+  return { day, invoices, live };
+}
+
+// ---------- Credit (آجل) ----------
+export interface CreditEntry {
+  customer: Customer;
+  balance: number;
+}
+
+export async function fetchCreditList(): Promise<CreditEntry[]> {
+  const [customers, invoices, payments] = await Promise.all([
+    fetchAllCustomers(),
+    supabase.from("invoices").select("customer_id, paid_credit"),
+    supabase.from("credit_payments").select("customer_id, amount"),
+  ]);
+
+  const owed = new Map<string, number>();
+  (invoices.data ?? []).forEach((i) => {
+    owed.set(i.customer_id, (owed.get(i.customer_id) ?? 0) + Number(i.paid_credit));
+  });
+  (payments.data ?? []).forEach((p) => {
+    owed.set(p.customer_id, (owed.get(p.customer_id) ?? 0) - Number(p.amount));
+  });
+
+  return customers
+    .map((c) => ({ customer: c, balance: Math.round((owed.get(c.id) ?? 0) * 100) / 100 }))
+    .filter((e) => e.balance > 0.001)
+    .sort((a, b) => b.balance - a.balance);
+}
+
+export async function customerCreditBalance(customerId: string): Promise<number> {
+  const [invoices, payments] = await Promise.all([
+    supabase.from("invoices").select("paid_credit").eq("customer_id", customerId),
+    supabase.from("credit_payments").select("amount").eq("customer_id", customerId),
+  ]);
+  const owed = (invoices.data ?? []).reduce((s, i) => s + Number(i.paid_credit), 0);
+  const paid = (payments.data ?? []).reduce((s, p) => s + Number(p.amount), 0);
+  return Math.round((owed - paid) * 100) / 100;
+}
+
+export async function recordCreditPayment(customerId: string, amount: number) {
+  const active = await fetchActiveWorkDay();
+  const { error } = await supabase.from("credit_payments").insert({
+    customer_id: customerId,
+    amount,
+    work_day_id: active?.id ?? null,
+  });
+  if (error) throw error;
 }
 
 // ---------- App settings ----------
@@ -237,6 +530,8 @@ export interface AppSettings {
   currency: string;
   rep_name: string | null;
   rep_phone: string | null;
+  invoice_width: string;
+  invoice_footer: string | null;
 }
 
 export async function fetchSettings(): Promise<AppSettings> {
@@ -275,13 +570,17 @@ export interface DashboardStats {
   totalStockValue: number;
   invoiceCount: number;
   totalSales: number;
+  totalCreditOutstanding: number;
+  activeDay: WorkDay | null;
 }
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
-  const [customers, products, invoices] = await Promise.all([
+  const [customers, products, invoices, payments, activeDay] = await Promise.all([
     supabase.from("customers").select("id", { count: "exact", head: true }),
     supabase.from("products").select("quantity, price"),
-    supabase.from("invoices").select("total_amount", { count: "exact" }),
+    supabase.from("invoices").select("total_amount, paid_credit", { count: "exact" }),
+    supabase.from("credit_payments").select("amount"),
+    fetchActiveWorkDay(),
   ]);
 
   const totalStockQty = (products.data ?? []).reduce((s, p) => s + Number(p.quantity), 0);
@@ -290,6 +589,8 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
     0,
   );
   const totalSales = (invoices.data ?? []).reduce((s, i) => s + Number(i.total_amount), 0);
+  const totalCredit = (invoices.data ?? []).reduce((s, i) => s + Number(i.paid_credit), 0);
+  const totalPaid = (payments.data ?? []).reduce((s, p) => s + Number(p.amount), 0);
 
   return {
     customerCount: customers.count ?? 0,
@@ -298,5 +599,14 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
     totalStockValue,
     invoiceCount: invoices.count ?? 0,
     totalSales,
+    totalCreditOutstanding: Math.max(0, totalCredit - totalPaid),
+    activeDay,
   };
+}
+
+export function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h} س ${m} د`;
+  return `${m} د`;
 }

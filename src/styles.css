@@ -174,3 +174,50 @@
 @utility gradient-brand {
   background-image: linear-gradient(135deg, oklch(0.72 0.18 55), oklch(0.62 0.21 38));
 }
+
+/* ---------- Thermal receipt (pure monochrome for thermal printers) ---------- */
+.receipt {
+  width: 300px;
+  max-width: 100%;
+  background: #ffffff;
+  color: #000000;
+  font-family: "Cairo", system-ui, sans-serif;
+}
+.receipt[data-w="58"] {
+  width: 200px;
+}
+.receipt[data-w="80"] {
+  width: 300px;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    overflow: visible !important;
+  }
+  body * {
+    visibility: hidden !important;
+  }
+  .receipt,
+  .receipt * {
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .receipt {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  @page {
+    margin: 3mm;
+  }
+}
+
