@@ -20,6 +20,8 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          invoice_footer: string | null
+          invoice_width: string
           lock_hours: number
           max_attempts: number
           rep_name: string | null
@@ -32,6 +34,8 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          invoice_footer?: string | null
+          invoice_width?: string
           lock_hours?: number
           max_attempts?: number
           rep_name?: string | null
@@ -44,6 +48,8 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          invoice_footer?: string | null
+          invoice_width?: string
           lock_hours?: number
           max_attempts?: number
           rep_name?: string | null
@@ -53,8 +59,33 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_id: string
+          id: string
+          work_day_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          customer_id: string
+          id?: string
+          work_day_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_id?: string
+          id?: string
+          work_day_id?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
+          category: string
           created_at: string
           day_of_week: number
           id: string
@@ -63,6 +94,7 @@ export type Database = {
           phone: string | null
         }
         Insert: {
+          category?: string
           created_at?: string
           day_of_week?: number
           id?: string
@@ -71,6 +103,7 @@ export type Database = {
           phone?: string | null
         }
         Update: {
+          category?: string
           created_at?: string
           day_of_week?: number
           id?: string
@@ -133,22 +166,34 @@ export type Database = {
           created_at: string
           customer_id: string
           id: string
+          paid_cash: number
+          paid_credit: number
+          paid_instapay: number
           total_amount: number
           total_quantity: number
+          work_day_id: string | null
         }
         Insert: {
           created_at?: string
           customer_id: string
           id?: string
+          paid_cash?: number
+          paid_credit?: number
+          paid_instapay?: number
           total_amount?: number
           total_quantity?: number
+          work_day_id?: string | null
         }
         Update: {
           created_at?: string
           customer_id?: string
           id?: string
+          paid_cash?: number
+          paid_credit?: number
+          paid_instapay?: number
           total_amount?: number
           total_quantity?: number
+          work_day_id?: string | null
         }
         Relationships: [
           {
@@ -181,6 +226,51 @@ export type Database = {
           name?: string
           price?: number
           quantity?: number
+        }
+        Relationships: []
+      }
+      work_days: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          ended_at: string | null
+          id: string
+          invoice_count: number
+          started_at: string
+          status: string
+          total_cash: number
+          total_credit: number
+          total_instapay: number
+          total_quantity: number
+          total_sales: number
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number
+          ended_at?: string | null
+          id?: string
+          invoice_count?: number
+          started_at?: string
+          status?: string
+          total_cash?: number
+          total_credit?: number
+          total_instapay?: number
+          total_quantity?: number
+          total_sales?: number
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          ended_at?: string | null
+          id?: string
+          invoice_count?: number
+          started_at?: string
+          status?: string
+          total_cash?: number
+          total_credit?: number
+          total_instapay?: number
+          total_quantity?: number
+          total_sales?: number
         }
         Relationships: []
       }
