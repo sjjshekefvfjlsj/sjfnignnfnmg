@@ -1,7 +1,7 @@
 import { createFileRoute, useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { FilePlus2, Search, Check, Save, Package, ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
