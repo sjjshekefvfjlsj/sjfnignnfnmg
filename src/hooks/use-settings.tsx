@@ -10,6 +10,8 @@ const FALLBACK: AppSettings = {
   currency: "ج.م",
   rep_name: null,
   rep_phone: null,
+  invoice_width: "80",
+  invoice_footer: null,
 };
 
 /** App-wide settings (site name, password, currency...). Cached via react-query. */
